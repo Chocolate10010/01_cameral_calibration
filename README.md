@@ -1,5 +1,7 @@
 # 说明 
 原作者numpy版本较低，适配现有1.26.1版本numpy进行了修改。
+同时添加了只矫正照片功能。
+python3 calibration.py --image_size 1920x1080 --mode rectify --image_only 0
 
 以下是原作者说明
 # camera_calibration_tool

@@ -218,8 +218,29 @@ class CameraCalibrator(object):
         dst = dst[y:y + h, x:x + w]
         dst = cv.resize(dst, (self.image_size[0], self.image_size[1]))
         return dst
-
-
+    
+    def rectify_image_only(self):
+        self.load_params()
+        file_names = glob.glob('./chess/*.JPG') + glob.glob('./chess/*.jpg') + glob.glob('./chess/*.png')
+        for file_name in file_names:
+            img = cv.imread(file_name)
+            
+            if img is None:
+                print(f"Failed to load image from {args.image_path}")
+                exit(-1)
+            if not isinstance(img, np.ndarray):
+                raise AssertionError("Image type '{}' is not numpy.ndarray.".format(type(img)))
+        
+            rectified_img = cv.undistort(img, self.matrix, self.dist, self.new_camera_matrix)
+            x, y, w, h = self.roi
+            rectified_img = rectified_img[y:y + h, x:x + w]
+            rectified_img = cv.resize(rectified_img, (self.image_size[0], self.image_size[1]))
+            
+            # 构造保存路径
+            base_name = os.path.basename(file_name)  # 获取原始文件名
+            save_path = os.path.join('./rectify_photo', base_name.replace('.jpg', '_rectify_photo.jpg'))  # 修改文件名并保存到指定路径
+            cv.imwrite(save_path, rectified_img)
+            
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--image_size', type= str, help='width*height of image')
@@ -228,6 +249,7 @@ if __name__ == '__main__':
     parser.add_argument('--corner', type=str, help='width*height of chessboard corner')
     parser.add_argument('--video_path', type=str, help='video to rectify')
     parser.add_argument('--camera_id', type=int, help='camera_id, default=0', default=0)
+    parser.add_argument('--image_only', type=bool, help='更改图像路径', default=True)
     args = parser.parse_args()
     calibrator = None
     
@@ -271,6 +293,9 @@ if __name__ == '__main__':
         elif args.camera_id:
             print("Press ESC to quit.")
             calibrator.rectify_camera(args.camera_id)
+        elif args.image_only:
+            calibrator.rectify_image_only()
+            print(f"finish")
     else:
         print("Invalid/Missing parameter '--mode'. Please choose from ['calibrate', 'rectify'].")
         exit(-1)
