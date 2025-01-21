@@ -12,13 +12,14 @@ It is similar with calibration package of ROS.
 
 
 # Content
-* [camera_calibration_tool](#camera_calibration_tool)
-* [Content](#content)
-* [Usage](#usage)
-    * [Calibration](#calibration)
-    * [Rectify video](#rectify-video)
-    * [Rectify camera](#rectify-camera)
-* [Command line parameters](#command-line-parameters)
+- [camera\_calibration\_tool](#camera_calibration_tool)
+- [Content](#content)
+- [Requirement](#requirement)
+- [Usage](#usage)
+  - [Calibration](#calibration)
+  - [Rectify video](#rectify-video)
+  - [Rectify camera](#rectify-camera)
+- [Command line parameters](#command-line-parameters)
 
 # Requirement
 

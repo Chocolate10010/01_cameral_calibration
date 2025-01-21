@@ -8,13 +8,17 @@ import xml.etree.ElementTree as ET
 import argparse
 
 class CameraCalibrator(object):
-    def __init__(self, image_size:tuple):
-        super(CameraCalibrator, self).__init__()
-        self.image_size = image_size
-        self.matrix = np.zeros((3, 3), np.float)
-        self.new_camera_matrix = np.zeros((3, 3), np.float)
-        self.dist = np.zeros((1, 5))
-        self.roi = np.zeros(4, np.int)
+    def __init__(self, image_size: tuple):    
+        # 初始化矩阵和数组
+        try:
+            self.image_size = image_size
+            self.matrix = np.zeros((3, 3), dtype=np.float64)
+            self.new_camera_matrix = np.zeros((3, 3), dtype=np.float64)
+            self.dist = np.zeros((1, 5), dtype=np.float64)
+            self.roi = np.zeros((4,), dtype=int)
+        except Exception as e:
+            print(f"初始化异常：{e}")
+            raise
 
     def load_params(self, param_file:str='camera_params.xml'):
         if not os.path.exists(param_file):
@@ -104,27 +108,46 @@ class CameraCalibrator(object):
 
     def cal_real_corner(self, corner_height, corner_width, square_size):
         obj_corner = np.zeros([corner_height * corner_width, 3], np.float32)
+    # 使用 np.mgrid 生成棋盘格角点的网格坐标
+    # np.mgrid[0:corner_height, 0:corner_width] 生成一个 2D 网格
+    # .T.reshape(-1, 2) 将网格坐标展平为 (corner_height * corner_width, 2) 的形状
         obj_corner[:, :2] = np.mgrid[0:corner_height, 0:corner_width].T.reshape(-1, 2)  # (w*h)*2
         return obj_corner * square_size
 
     def calibration(self, corner_height:int, corner_width:int, square_size:float):
+        
         file_names = glob.glob('./chess/*.JPG') + glob.glob('./chess/*.jpg') + glob.glob('./chess/*.png')
-        objs_corner = []
+
         imgs_corner = []
+        #中止条件
         criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        print("中止条件：",criteria,"\n")
+        
+        objs_corner = []
         obj_corner = self.cal_real_corner(corner_height, corner_width, square_size)
-        for file_name in file_names:
-            # read image
+        
+        for file_name in file_names:        
+            # 读取图像
             chess_img = cv.imread(file_name)
+            # 核验图像尺寸
             assert (chess_img.shape[0] == self.image_size[1] and chess_img.shape[1] == self.image_size[0]), \
                 "Image size does not match the given value {}.".format(self.image_size)
-            # to gray
+            # 取灰度
             gray = cv.cvtColor(chess_img, cv.COLOR_BGR2GRAY)
-            # find chessboard corners
+            # 直接调用cv库函数，找到棋盘格角点
             ret, img_corners = cv.findChessboardCorners(gray, (corner_height, corner_width))
-
+               
             # append to img_corners
             if ret:
+                # 绘制角点
+                img_with_corners = cv.drawChessboardCorners(chess_img, (corner_height, corner_width), img_corners, ret)
+        
+                # 构造保存路径
+                base_name = os.path.basename(file_name)  # 获取原始文件名
+                save_path = os.path.join('./chess_with_corners', base_name.replace('.jpg', '_with_corners.jpg'))  # 修改文件名并保存到指定路径
+                cv.imwrite(save_path, img_with_corners)
+                
+                # 添加到列表
                 objs_corner.append(obj_corner)
                 img_corners = cv.cornerSubPix(gray, img_corners, winSize=(square_size//2, square_size//2),
                                               zeroZone=(-1, -1), criteria=criteria)
@@ -207,14 +230,26 @@ if __name__ == '__main__':
     parser.add_argument('--camera_id', type=int, help='camera_id, default=0', default=0)
     args = parser.parse_args()
     calibrator = None
-
     try:
         image_size = tuple(int(i) for i in args.image_size.split('x'))
-        calibrator = CameraCalibrator(image_size)
+        if not isinstance(image_size, tuple) or len(image_size) != 2:
+            raise ValueError("Invalid image_size. Expected a tuple of (width, height).")
+        if not all(isinstance(dim, int) and dim > 0 for dim in image_size):
+            raise ValueError("Invalid image_size. Width and height must be positive integers.")
     except:
         print("Invalid/Missing parameter: --image_size. Sample: \n\n"
-              "    --image_size 1920*1080\n")
+              "    --image_size 1920x1080\n")
         exit(-1)
+    else:
+        print("--image_size 传入成功 \n")
+        
+    try:
+        calibrator = CameraCalibrator(image_size)
+    except:
+        print("calibrator 实例化失败")
+        exit(-1)
+    else:
+        print("calibrator 实例化成功 \n")
 
     if args.mode == 'calibrate':
         if not args.corner or not args.square:
