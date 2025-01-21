@@ -1,3 +1,7 @@
+# 说明 
+原作者numpy版本较低，适配现有1.26.1版本numpy进行了修改。
+
+以下是原作者说明
 # camera_calibration_tool
 
 中文博客：https://blog.csdn.net/qq_31417941/article/details/102952942
@@ -12,6 +16,7 @@ It is similar with calibration package of ROS.
 
 
 # Content
+- [说明](#说明)
 - [camera\_calibration\_tool](#camera_calibration_tool)
 - [Content](#content)
 - [Requirement](#requirement)
