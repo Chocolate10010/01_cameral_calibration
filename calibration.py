@@ -230,6 +230,8 @@ if __name__ == '__main__':
     parser.add_argument('--camera_id', type=int, help='camera_id, default=0', default=0)
     args = parser.parse_args()
     calibrator = None
+    
+    #image_size传入calibrator
     try:
         image_size = tuple(int(i) for i in args.image_size.split('x'))
         if not isinstance(image_size, tuple) or len(image_size) != 2:
@@ -240,17 +242,14 @@ if __name__ == '__main__':
         print("Invalid/Missing parameter: --image_size. Sample: \n\n"
               "    --image_size 1920x1080\n")
         exit(-1)
-    else:
-        print("--image_size 传入成功 \n")
         
     try:
         calibrator = CameraCalibrator(image_size)
     except:
         print("calibrator 实例化失败")
         exit(-1)
-    else:
-        print("calibrator 实例化成功 \n")
 
+    # calibrate模式
     if args.mode == 'calibrate':
         if not args.corner or not args.square:
             print("Missing parameters of corner/square. Using: \n\n"
